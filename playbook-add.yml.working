@@ -1,0 +1,19 @@
+---
+- hosts: localhost
+  remote_user: root
+
+#  tasks:
+#  - name: try nmcli add team
+#    nmcli: name=add cname={{item.cname}} ifname={{item.ifname}} type=team enabled=yes state=present
+#    with_items:
+#      - { cname: 'cname-test', ifname: 'ifname-test' }
+#      - { cname: 'cname-pest', ifname: 'ifname-pest' }
+#  - name: try nmcli rm team
+#    nmcli: cname=test state=absent
+
+  tasks:
+  - name: try nmcli add team
+    nmcli: name=add cname={{item.cname}} type=team enabled=yes state=present
+    with_items:
+      - { cname: 'cname-test' }
+      - { cname: 'cname-pest' }

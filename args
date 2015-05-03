@@ -1,0 +1,1 @@
+name=add cname=my-team1 ifname=my-team1 type=team state=present enable=yes

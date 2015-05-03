@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  remote_user: root
+
+  tasks:
+#    - name: try nmcli del team
+#      nmcli: name=del cname=test state=absent remove=yes
+#
+
+  - name: try nmcli del team - multiple
+    nmcli: cname={{item.cname}} state=absent
+    with_items:
+      - { cname: 'cname-test'}
+      - { cname: 'cname-pest'}

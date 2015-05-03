@@ -1,0 +1,10 @@
+---
+- hosts: localhost
+  remote_user: root
+
+  tasks:
+  - name: try nmcli add team
+    nmcli: name=add cname=test ifname=test type=team enabled=yes state=present
+
+#  - name: try nmcli rm team
+#    nmcli: cname=test state=absent
