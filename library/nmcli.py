@@ -349,11 +349,19 @@ class Nmcli(object):
                 return True
         return False
 
-    def connection_down(self):
+    def down_connection(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
         # if self.connection_exists():
         cmd.append('con')
         cmd.append('down')
+        cmd.append(self.cname)
+        return self.execute_command(cmd)
+
+    def up_connection(self):
+        cmd=[self.module.get_bin_path('nmcli', True)]
+        # if self.connection_exists():
+        cmd.append('con')
+        cmd.append('up')
         cmd.append(self.cname)
         return self.execute_command(cmd)
 
@@ -363,7 +371,7 @@ class Nmcli(object):
         #     self.module.fail_json(msg="this connection exists already")
         # else:
         # format for creating team interface
-        cmd.append('connection')
+        cmd.append('con')
         cmd.append('add')
         cmd.append('type')
         cmd.append(self.type)
@@ -441,11 +449,47 @@ class Nmcli(object):
     def create_connection_team_slave(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
         # format for creating team-slave interface
+        cmd.append('connection')
+        cmd.append('add')
+        cmd.append('type')
+        cmd.append(self.type)
+        cmd.append('con-name')
+        if self.cname is not None:
+            cmd.append(self.cname)
+        elif self.ifname is not None:
+            cmd.append(self.ifname)
+        else:
+            self.module.fail_json(msg="You haven't specified a name for the connection")
+            # cmd.append(self.cname)
+        cmd.append('ifname')
+        if self.ifname is not None:
+            cmd.append(self.ifname)
+        elif self.cname is not None:
+            cmd.append(self.cname)
+        cmd.append('master')
+        if self.cname is not None:
+            cmd.append(self.master)
+        else:
+            self.module.fail_json(msg="You haven't specified a name for the master")
+        if self.enabled is not None:
+            cmd.append('autoconnect')
+            cmd.append(self.enabled)
         return cmd
 
     def modify_connection_team_slave(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
         # format for modifying team-slave interface
+        cmd.append('con')
+        cmd.append('mod')
+        if self.cname is not None:
+            cmd.append(self.cname)
+        else:
+            self.module.fail_json(msg="You haven't specified a name for the connection")
+        cmd.append('master')
+        if self.cname is not None:
+            cmd.append(self.master)
+        else:
+            self.module.fail_json(msg="You haven't specified a name for the master so we're not changing a thing")
         return cmd
 
     def create_connection_bond(self):
@@ -585,7 +629,7 @@ class Nmcli(object):
         return self.execute_command(cmd)
 
     def remove_connection(self):
-        # self.connection_down()
+        # self.down_connection()
 
         cmd=[self.module.get_bin_path('nmcli', True)]
         cmd.append('con')
@@ -670,12 +714,12 @@ def main():
         # if nmcli.connection_exists():
         if module.check_mode:
             module.exit_json(changed=True)
-        (rc, out, err)=nmcli.connection_down()
+        (rc, out, err)=nmcli.down_connection()
         (rc, out, err)=nmcli.remove_connection()
 
         # elif not nmcli.connection_exists():
         #     result['Connection']='No Connection named %s exists' % nmcli.cname
-        #     (rc, out, err)=nmcli.connection_down()
+        #     (rc, out, err)=nmcli.down_connection()
         #     (rc, out, err)=nmcli.remove_connection()
         #     result['Connection']='Connection %s is being removed' % nmcli.cname
         #     result['Connection']='Yessss. Connection %s exists' % nmcli.cname
