@@ -1,5 +1,5 @@
 ---
-- hosts: localhost
+- hosts: controller-01.infra.openstack.eng.rdu2.redhat.com
   remote_user: root
   tasks:
 
@@ -47,19 +47,19 @@
 #      - { cname: 'cname-test', ip4: ['192.168.100.1/24', '192.168.100.3']}
 #      - { cname: 'cname-pest', ip4: ['192.168.100.2/24', '192.168.100.4']}
 
-##### Working with mods 1
-
-  - name: try nmcli add team - cname only & ip4 gw4
-    nmcli: name=add type=team cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} state=present
-    with_items:
-      - {cname: 'cname-test', ip4: '192.168.100.1/24', gw4: '192.168.200.1',}
-      - {cname: 'cname-pest', ip4: '192.168.100.2/24', gw4: '192.168.200.1',}
-
-  - name: try nmcli mod team - quoted dns array
-    nmcli: name=mod cname={{item.cname}} dns4={{item.dns4}} state=present
-    with_items:
-      - {cname: 'cname-test', dns4: '"8.8.8.8 8.8.4.4 4.4.4.4"'}
-      - {cname: 'cname-pest', dns4: '"8.8.8.8 8.8.4.4 4.4.4.4"'}
+###### Working with mods 1
+#
+#  - name: try nmcli add team - cname only & ip4 gw4
+#    nmcli: name=add type=team cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} state=present
+#    with_items:
+#      - {cname: 'cname-test', ip4: '192.168.100.1/24', gw4: '192.168.200.1',}
+#      - {cname: 'cname-pest', ip4: '192.168.100.2/24', gw4: '192.168.200.1',}
+#
+#  - name: try nmcli mod team - quoted dns array
+#    nmcli: name=mod cname={{item.cname}} dns4={{item.dns4}} state=present
+#    with_items:
+#      - {cname: 'cname-test', dns4: '"8.8.8.8 8.8.4.4 4.4.4.4"'}
+#      - {cname: 'cname-pest', dns4: '"8.8.8.8 8.8.4.4 4.4.4.4"'}
 
 ###### Working with mods 2
 #
@@ -74,3 +74,25 @@
 #    with_items:
 #      - {cname: 'cname-test', dns4: '"8.8.8.8 8.8.4.4"'}
 #      - {cname: 'cname-pest', dns4: '"8.8.8.8 8.8.4.4"'}
+
+##### Working with mods 3 with team-slaves
+
+  - name: try nmcli add team - cname only & ip4 gw4
+    nmcli: type=team cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} state=present
+    with_items:
+      - {cname: 'cname-test', ip4: '192.168.100.1/24', gw4: '192.168.10.1',}
+      - {cname: 'cname-pest', ip4: '192.168.100.2/24', gw4: '192.168.10.1',}
+
+  - name: try nmcli mod team - quoted dns array state=modify enabled=no
+    nmcli: cname={{item.cname}} dns4={{item.dns4}} type=team
+    with_items:
+      - {cname: 'cname-test', dns4: '"8.8.8.8 8.8.4.4"'}
+      - {cname: 'cname-pest', dns4: '"8.8.8.8 8.8.4.4"'}
+
+  - name: try nmcli add teams-slave
+    nmcli: type=team-slave cname={{item.cname}} ifname={{item.ifname}} master={{item.master}} state=present
+    with_items:
+      - {cname: 'em1', ifname: 'em1', master: 'cname-test',}
+      - {cname: 'em2', ifname: 'em2', master: 'cname-test',}
+      - {cname: 'em1', ifname: 'em1', master: 'cname-pest',}
+      - {cname: 'em2', ifname: 'em2', master: 'cname-pest',}
