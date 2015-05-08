@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# (c) 2015, Chris Long <alcamie@gmail.com>
+# (c) 2015, Chris Long <alcamie@gmail.com> <chlong@redhat.com>
 #
 # This file is a module for Ansible that interacts with Network Manager
 #
@@ -28,9 +28,22 @@ requirements: [ nmcli, dbus ]
 description:
     - Manage the network devices. Create, modify, and manage, ethernet, teams, bonds, vlans etc.
 options:
-    name:
-        required: true
+    state:
+        required: True
+        default: "present"
+        choices: [ present, absent ]
+    description:
+        - Whether the device should exist or not, taking action if the state is different from what is stated.
+    enabled:
         required: False
+        default: "yes"
+        choices: [ "yes", "no" ]
+        description:
+            - Whether the service should start on boot. B(At least one of state and enabled are required.)
+            - Whether the connection profile can be automatically activated ( default: yes)
+    action:
+        required: False
+        default: None
         choices: [ add, modify, show, up, down ]
         description:
             - Set to 'add' if you want to add a connection.
@@ -40,118 +53,169 @@ options:
             - Set to 'up' if you want to bring a connection up. Requires 'cfname' to be set.
             - Set to 'down' if you want to bring a connection down. Requires 'cfname' to be set.
     cname:
-        required: false
+        required: True
+        default: None
         description:
             - Where CNAME will be the name used to call the connection. when not provided a default name is generated: <type>[-<ifname>][-<num>]
-    autoconnect:
-        required: false
-        default: yes
-        choices: [ yes, no ]
-        description:
-            - Whether the connection profile can be automatically activated ( default: yes)
     ifname:
-        required: false
+        required: False
+        default: cname
         description:
             - Where INAME will be the what we call the interface name. Required with 'up', 'down' modifiers.
             - interface to bind the connection to. The connection will only be applicable to this interface name.
             - A special value of "*" can be used for interface-independent connections.
             - The ifname argument is mandatory for all connection types except bond, team, bridge and vlan.
     type:
-        required: false
+        required: False
         choices: [ ethernet, team, team-slave, bond, bond-slave, bridge, vlan ]
         description:
             - This is the type of device or network connection that you wish to create.
-    bondmode:
-        required: false
+    mode:
+        required: False
         choices: [ "balance-rr", "active-backup", "balance-xor", "broadcast", "802.3ad", "balance-tlb", "balance-alb" ]
-        default: "balance-rr"
+        default: None
         description:
-            - This is the type of device or network connection that you wish to create.
+            - This is the type of device or network connection that you wish to create for a bond, team or bridge. (NetworkManager default: balance-rr)
     master:
-        required: false
+        required: False
+        default: None
         description:
             - master <master (ifname, or connection UUID or cname) of bridge, team, bond master connection profile.
     ip4:
-        required: false
+        required: False
+        default: None
         description: The IPv4 address to this interface using this format ie: "192.168.1.24/24"
     gw4:
-        required: false
+        required: False
         description: The IPv4 gateway for this interface using this format ie: "192.168.100.1"
     dns4:
-        required: false
+        required: False
+        default: None
         description: A list of upto 3 dns servers, ipv4 format e.g. To add two IPv4 DNS server addresses: ['"8.8.8.8 8.8.4.4"']
     ip6:
-        required: false
+        required: False
+        default: None
         description:
             - The IPv6 address to this interface using this format ie: "abbe::cafe"
-    gw:
-        required: false
-        version_added: "0.1"
-        aliases: [ "gw6" ]
+    gw6:
+        required: False
+        default: None
         description: The IPv6 gateway for this interface using this format ie: "2001:db8::1"
     dns6:
-        required: false
+        required: False
         description: A list of upto 3 dns servers, ipv6 format e.g. To add two IPv6 DNS server addresses: ['"2001:4860:4860::8888 2001:4860:4860::8844"']
     mtu:
-        required: false
+        required: False
+        default: None
         description:
-            - The connection MTU, e.g. 9000. This can't be applied when creating the interface and is done once the interface has been created.
+            - The connection MTU, e.g. 9000. This can't be applied when creating the interface and is done once the interface has been created. (NetworkManager default: 1500)
+            - Can be used when modifying Team, VLAN, Ethernet (Future plans to implement wifi, pppoe, infiniband)
+    primary:
+        required: False
+        default: None
+        description:
+            - This is only used with bond and is the primary interface name (for "active-backup" mode), this is the usually the 'ifname'
+    miimon:
+        required: False
+        default: None
+        description:
+            - This is only used with bond - miimon (NetworkManager default: 100)
+    downdelay:
+        required: False
+        default: None
+        description:
+            - This is only used with bond - downdelay (NetworkManager default: 0)
+    updelay:
+        required: False
+        default: None
+        description:
+            - This is only used with bond - updelay (NetworkManager default: 0)
+    arp_interval:
+        required: False
+        default: None
+        description:
+            - This is only used with bond - ARP interval (NetworkManager default: 0)
+    arp_ip_target:
+        required: False
+        default: None
+        description:
+            - This is only used with bond - ARP IP target
     stp:
-        required: false
-        default: yes
+        required: False
+        default: None
         description:
             - This is only used with bridge and controls whether Spanning Tree Protocol (STP) is enabled for this bridge
     priority:
-        required: false
-        default: "128"
+        required: False
+        default: None
         description:
-            - This is only used with 'bridge' - sets STP priority (default: 128)
-    slavepriority:
-        required: false
-        default: "128"
-        description:
-            - This is only used with 'bridge-slave' - STP priority of this slave (default: 32)
+            - This is only used with 'bridge' - sets STP priority (NetworkManager default: 128)
     forwarddelay:
-        required: false
-        default: "15"
+        required: False
+        default: None
         description:
-            - This is only used with bridge - [forward-delay <2-30>] STP forwarding delay, in seconds (default: 15)
+            - This is only used with bridge - [forward-delay <2-30>] STP forwarding delay, in seconds (NetworkManager default: 15)
     hellotime:
-        required: false
-        default: "2"
+        required: False
+        default: None
         description:
-            - This is only used with bridge - [hello-time <1-10>] STP hello time, in seconds (default: 2)
+            - This is only used with bridge - [hello-time <1-10>] STP hello time, in seconds (NetworkManager default: 2)
     maxage:
-        required: false
-        default: "20"
+        required: False
+        default: None
         description:
-            - This is only used with bridge - [max-age <6-42>] STP maximum message age, in seconds (default: 20)
+            - This is only used with bridge - [max-age <6-42>] STP maximum message age, in seconds (NetworkManager default: 20)
     ageingtime:
-        required: false
-        default: "300"
+        required: False
+        default: None
         description:
-            - This is only used with bridge - [ageing-time <0-1000000>] the Ethernet MAC address aging time, in seconds (default: 300)
+            - This is only used with bridge - [ageing-time <0-1000000>] the Ethernet MAC address aging time, in seconds (NetworkManager default: 300)
     mac:
-        required: false
-        default: "300"
+        required: False
+        default: None
         description:
             - This is only used with bridge - MAC address of the bridge (note: this requires a recent kernel feature, originally introduced in 3.15 upstream kernel)
+    slavepriority:
+        required: False
+        default: None
+        description:
+            - This is only used with 'bridge-slave' - [<0-63>] - STP priority of this slave (default: 32)
+    path_cost:
+        required: False
+        default: None
+        description:
+            - This is only used with 'bridge-slave' - [<1-65535>] - STP port cost for destinations via this slave (NetworkManager default: 100)
+    hairpin:
+        required: False
+        default: None
+        description:
+            - This is only used with 'bridge-slave' - 'hairpin mode' for the slave, which allows frames to be sent back out through the slave the frame was received on. (NetworkManager default: yes)
     vlanid:
-        required: false
+        required: False
+        default: None
         description:
             - This is only used with VLAN - VLAN ID in range <0-4095>
-        state:
-            required: false
-            default: "present"
-            choices: [ present, absent ]
+    vlandev:
+        required: False
+        default: None
         description:
-            - Whether the device should exist or not, taking action if the state is different from what is stated.
-    enabled:
-        required: false
-        default: "yes"
-        choices: [ "yes", "no" ]
+            - This is only used with VLAN - parent device this VLAN is on, can use ifname
+    flags:
+        required: False
+        default: None
         description:
-            - Whether the service should start on boot. B(At least one of state and enabled are required.)
+            - This is only used with VLAN - flags
+    ingress:
+        required: False
+        default: None
+        description:
+            - This is only used with VLAN - VLAN ingress priority mapping
+    egress:
+        required: False
+        default: None
+        description:
+            - This is only used with VLAN - VLAN egress priority mapping
+
 '''
 
 EXAMPLES='''
@@ -255,7 +319,7 @@ class Nmcli(object):
         self.module=module
         self.state=module.params['state']
         self.enabled=module.params['enabled']
-        self.name=module.params['name']
+        self.action=module.params['action']
         self.cname=module.params['cname']
         self.master=module.params['master']
         self.autoconnect=module.params['autoconnect']
@@ -283,7 +347,10 @@ class Nmcli(object):
         self.ageingtime=module.params['ageingtime']
         self.mac=module.params['mac']
         self.vlanid=module.params['vlanid']
-
+        self.vlandev=module.params['vlandev']
+        self.flags=module.params['flags']
+        self.ingress=module.params['ingress']
+        self.egress=module.params['egress']
         # select whether we dump additional debug info through syslog
         self.syslogging=True
 
@@ -331,11 +398,9 @@ class Nmcli(object):
         return dstr
 
     def connection_to_string(self, config):
-        # dump a connection configuration to a the console
+        # dump a connection configuration to use in list_connection_info
         setting_list=[]
         for setting_name in config:
-            # print "        Setting: %s" % setting_name
-            # print dict_to_string(config[setting_name], "            ")
             setting_list.append(self.dict_to_string(config[setting_name]))
         return setting_list
         # print ""
@@ -358,7 +423,7 @@ class Nmcli(object):
             # Now get secrets too; we grab the secrets for each type of connection
             # (since there isn't a "get all secrets" call because most of the time
             # you only need 'wifi' secrets or '802.1x' secrets, not everything) and
-            # merge that into the configuration data
+            # merge that into the configuration data - To use at a later stage
             self.merge_secrets(settings_connection, config, '802-11-wireless')
             self.merge_secrets(settings_connection, config, '802-11-wireless-security')
             self.merge_secrets(settings_connection, config, '802-1x')
@@ -371,10 +436,6 @@ class Nmcli(object):
             connection_list.append(s_con['id'])
             connection_list.append(s_con['uuid'])
             connection_list.append(s_con['type'])
-            # print "    name: %s" % s_con['id']
-            # print "    uuid: %s" % s_con['uuid']
-            # print "    type: %s" % s_con['type']
-            # print "    ------------------------------------------"
             connection_list.append(self.connection_to_string(config))
         return connection_list
 
@@ -459,6 +520,9 @@ class Nmcli(object):
         if self.dns6 is not None:
             cmd.append('ipv6.dns')
             cmd.append(self.dns6)
+        if self.mtu is not True:
+            cmd.append('mtu')
+            cmd.append(self.mtu)
         if self.enabled is not None:
             cmd.append('autoconnect')
             cmd.append(self.enabled)
@@ -492,9 +556,6 @@ class Nmcli(object):
         cmd.append('con')
         cmd.append('mod')
         cmd.append(self.cname)
-        if self.type is not None:
-            cmd.append('type')
-            cmd.append(self.type)
         cmd.append('connection.master')
         cmd.append(self.master)
         return cmd
@@ -511,9 +572,6 @@ class Nmcli(object):
             cmd.append(self.cname)
         elif self.ifname is not None:
             cmd.append(self.ifname)
-        # cmd.append('primary')
-        # if self.ifname is not None:
-        #     cmd.append(self.ifname)
         cmd.append('ifname')
         if self.ifname is not None:
             cmd.append(self.ifname)
@@ -534,29 +592,53 @@ class Nmcli(object):
         if self.enabled is not None:
             cmd.append('autoconnect')
             cmd.append(self.enabled)
-        # if self.mode is not None:
-        #     cmd.append('mode')
-        #     cmd.append(self.mode)
-        # if self.miimon is not None:
-        #     cmd.append('miimon')
-        #     cmd.append(self.miimon)
-        # if self.downdelay is not None:
-        #     cmd.append('downdelay')
-        #     cmd.append(self.downdelay)
-        # if self.downdelay is not None:
-        #     cmd.append('updelay')
-        #     cmd.append(self.updelay)
-        # if self.downdelay is not None:
-        #     cmd.append('arp_interval')
-        #     cmd.append(self.arp_interval)
-        # if self.downdelay is not None:
-        #     cmd.append('arp_ip_target')
-        #     cmd.append(self.arp_ip_target)
+        if self.mode is not None:
+            cmd.append('mode')
+            cmd.append(self.mode)
+        if self.miimon is not None:
+            cmd.append('miimon')
+            cmd.append(self.miimon)
+        if self.downdelay is not None:
+            cmd.append('downdelay')
+            cmd.append(self.downdelay)
+        if self.downdelay is not None:
+            cmd.append('updelay')
+            cmd.append(self.updelay)
+        if self.downdelay is not None:
+            cmd.append('arp-interval')
+            cmd.append(self.arp_interval)
+        if self.downdelay is not None:
+            cmd.append('arp-ip-target')
+            cmd.append(self.arp_ip_target)
         return cmd
 
     def modify_connection_bond(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
         # format for modifying bond interface
+        cmd.append('con')
+        cmd.append('mod')
+        cmd.append(self.cname)
+        if self.ip4 is not None:
+            cmd.append('ipv4.address')
+            cmd.append(self.ip4)
+        if self.gw4 is not None:
+            cmd.append('ipv4.gateway')
+            cmd.append(self.gw4)
+        if self.dns4 is not None:
+            cmd.append('ipv4.dns')
+            cmd.append(self.dns4)
+        if self.ip6 is not None:
+            cmd.append('ipv6.address')
+            cmd.append(self.ip6)
+        if self.gw6 is not None:
+            cmd.append('ipv6.gateway')
+            cmd.append(self.gw4)
+        if self.dns6 is not None:
+            cmd.append('ipv6.dns')
+            cmd.append(self.dns6)
+        if self.enabled is not None:
+            cmd.append('autoconnect')
+            cmd.append(self.enabled)
         return cmd
 
     def create_connection_bond_slave(self):
@@ -584,6 +666,11 @@ class Nmcli(object):
     def modify_connection_bond_slave(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
         # format for modifying bond-slave interface
+        cmd.append('con')
+        cmd.append('mod')
+        cmd.append(self.cname)
+        cmd.append('connection.master')
+        cmd.append(self.master)
         return cmd
 
     def create_connection_ethernet(self):
@@ -591,7 +678,7 @@ class Nmcli(object):
         # format for creating ethernet interface
         # To add an Ethernet connection with static IP configuration, issue a command as follows
         # - nmcli: name=add cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 state=present
-        #        nmcli con add con-name my-eth1 ifname eth1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1
+        # nmcli con add con-name my-eth1 ifname eth1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1
         cmd.append('con')
         cmd.append('add')
         cmd.append('type')
@@ -618,9 +705,9 @@ class Nmcli(object):
         if self.gw6 is not None:
             cmd.append('gw6')
             cmd.append(self.gw6)
-        # if self.enabled is not None:
-            # cmd.append('autoconnect')
-            # cmd.append(self.enabled)
+        if self.enabled is not None:
+            cmd.append('autoconnect')
+            cmd.append(self.enabled)
         return cmd
 
     def modify_connection_ethernet(self):
@@ -628,7 +715,7 @@ class Nmcli(object):
         # format for  modifying ethernet interface
         # To add an Ethernet connection with static IP configuration, issue a command as follows
         # - nmcli: name=add cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 state=present
-        #        nmcli con add con-name my-eth1 ifname eth1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1
+        # nmcli con add con-name my-eth1 ifname eth1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1
         cmd.append('con')
         cmd.append('mod')
         cmd.append(self.cname)
@@ -727,7 +814,7 @@ def main():
     module=AnsibleModule(
         argument_spec=dict(
             enabled=dict(required=False, default=None, choices=['yes', 'no'], type='str'),
-            name=dict(required=False, default=None, choices=['add', 'mod', 'show', 'up', 'down', 'del'], type='str'),
+            action=dict(required=False, default=None, choices=['add', 'mod', 'show', 'up', 'down', 'del'], type='str'),
             state=dict(required=True, default=None, choices=['present', 'absent'], type='str'),
             cname=dict(required=False, type='str'),
             master=dict(required=False, default=None, type='str'),
@@ -760,7 +847,10 @@ def main():
             ageingtime=dict(required=False, default="300", type='str'),
             # vlan specific vars
             vlanid=dict(required=False, default=None, type='str'),
-            # following options are specific to ifnamedel
+            vlandev=dict(required=False, default=None, type='str'),
+            flags=dict(required=False, default=None, type='str'),
+            ingress=dict(required=False, default=None, type='str'),
+            egress=dict(required=False, default=None, type='str'),
         ),
         supports_check_mode=True
     )
