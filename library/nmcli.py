@@ -270,6 +270,12 @@ class Nmcli(object):
         self.mtu=module.params['mtu']
         self.stp=module.params['stp']
         self.priority=module.params['priority']
+        self.mode=module.params['mode']
+        self.miimon=module.params['miimon']
+        self.downdelay=module.params['downdelay']
+        self.updelay=module.params['updelay']
+        self.arp_interval=module.params['arp_interval']
+        self.arp_ip_target=module.params['arp_ip_target']
         self.slavepriority=module.params['slavepriority']
         self.forwarddelay=module.params['forwarddelay']
         self.hellotime=module.params['hellotime']
@@ -397,14 +403,11 @@ class Nmcli(object):
 
     def create_connection_team(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
-        # if connection_exists()
-        #     self.module.fail_json(msg="this connection exists already")
-        # else:
         # format for creating team interface
         cmd.append('con')
         cmd.append('add')
         cmd.append('type')
-        cmd.append(self.type)
+        cmd.append('team')
         cmd.append('con-name')
         if self.cname is not None:
             cmd.append(self.cname)
@@ -434,9 +437,6 @@ class Nmcli(object):
 
     def modify_connection_team(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
-        # if connection_exists()
-        #     self.module.fail_json(msg="this connection exists already")
-        # else:
         # format for modifying team interface
         cmd.append('con')
         cmd.append('mod')
@@ -502,6 +502,56 @@ class Nmcli(object):
     def create_connection_bond(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
         # format for creating bond interface
+        cmd.append('con')
+        cmd.append('add')
+        cmd.append('type')
+        cmd.append('bond')
+        cmd.append('con-name')
+        if self.cname is not None:
+            cmd.append(self.cname)
+        elif self.ifname is not None:
+            cmd.append(self.ifname)
+        # cmd.append('primary')
+        # if self.ifname is not None:
+        #     cmd.append(self.ifname)
+        cmd.append('ifname')
+        if self.ifname is not None:
+            cmd.append(self.ifname)
+        elif self.cname is not None:
+            cmd.append(self.cname)
+        if self.ip4 is not None:
+            cmd.append('ip4')
+            cmd.append(self.ip4)
+        if self.gw4 is not None:
+            cmd.append('gw4')
+            cmd.append(self.gw4)
+        if self.ip6 is not None:
+            cmd.append('ip6')
+            cmd.append(self.ip6)
+        if self.gw6 is not None:
+            cmd.append('gw6')
+            cmd.append(self.gw6)
+        if self.enabled is not None:
+            cmd.append('autoconnect')
+            cmd.append(self.enabled)
+        # if self.mode is not None:
+        #     cmd.append('mode')
+        #     cmd.append(self.mode)
+        # if self.miimon is not None:
+        #     cmd.append('miimon')
+        #     cmd.append(self.miimon)
+        # if self.downdelay is not None:
+        #     cmd.append('downdelay')
+        #     cmd.append(self.downdelay)
+        # if self.downdelay is not None:
+        #     cmd.append('updelay')
+        #     cmd.append(self.updelay)
+        # if self.downdelay is not None:
+        #     cmd.append('arp_interval')
+        #     cmd.append(self.arp_interval)
+        # if self.downdelay is not None:
+        #     cmd.append('arp_ip_target')
+        #     cmd.append(self.arp_ip_target)
         return cmd
 
     def modify_connection_bond(self):
@@ -512,6 +562,23 @@ class Nmcli(object):
     def create_connection_bond_slave(self):
         cmd=[self.module.get_bin_path('nmcli', True)]
         # format for creating bond-slave interface
+        cmd.append('connection')
+        cmd.append('add')
+        cmd.append('type')
+        cmd.append('bond-slave')
+        cmd.append('con-name')
+        if self.cname is not None:
+            cmd.append(self.cname)
+        elif self.ifname is not None:
+            cmd.append(self.ifname)
+        cmd.append('ifname')
+        if self.ifname is not None:
+            cmd.append(self.ifname)
+        elif self.cname is not None:
+            cmd.append(self.cname)
+        cmd.append('master')
+        if self.cname is not None:
+            cmd.append(self.master)
         return cmd
 
     def modify_connection_bond_slave(self):
@@ -525,37 +592,35 @@ class Nmcli(object):
         # To add an Ethernet connection with static IP configuration, issue a command as follows
         # - nmcli: name=add cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 state=present
         #        nmcli con add con-name my-eth1 ifname eth1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1
-        # if self.type == 'ethernet':
-        #     cmd.append = 'con'
-        #     cmd.append = self.name
-        #     cmd.append('con-name')
-        #     if self.cname is not None:
-        #         cmd.append(self.cname)
-        #     elif self.cname is None:
-        #         if self.ifname is not None:
-        #             cmd.append(self.ifname)
-        #     cmd.append('ifname')
-        #     cmd.append(self.ifname)
-        #     cmd.append('type')
-        #     cmd.append(self.type)
-        #     if self.ip4 is not None:
-        #         cmd.append('ip4')
-        #         cmd.append(self.ip4)
-        #     if self.gw4 is not None:
-        #         cmd.append('gw4')
-        #         cmd.append(self.gw4)
-        #     if self.dns4 is not None:
-        #         cmd.append('dns4')
-        #         cmd.append(self.dns4)
-        #     if self.ip6 is not None:
-        #         cmd.append('ip6')
-        #         cmd.append(self.ip6)
-        #     if self.gw6 is not None:
-        #         cmd.append('gw6')
-        #         cmd.append(self.gw4)
-        #     if self.dns6 is not None:
-        #         cmd.append('dns6')
-        #         cmd.append(self.dns6)
+        cmd.append('con')
+        cmd.append('add')
+        cmd.append('type')
+        cmd.append('ethernet')
+        cmd.append('con-name')
+        if self.cname is not None:
+            cmd.append(self.cname)
+        elif self.ifname is not None:
+            cmd.append(self.ifname)
+        cmd.append('ifname')
+        if self.ifname is not None:
+            cmd.append(self.ifname)
+        elif self.cname is not None:
+            cmd.append(self.cname)
+        if self.ip4 is not None:
+            cmd.append('ip4')
+            cmd.append(self.ip4)
+        if self.gw4 is not None:
+            cmd.append('gw4')
+            cmd.append(self.gw4)
+        if self.ip6 is not None:
+            cmd.append('ip6')
+            cmd.append(self.ip6)
+        if self.gw6 is not None:
+            cmd.append('gw6')
+            cmd.append(self.gw6)
+        # if self.enabled is not None:
+            # cmd.append('autoconnect')
+            # cmd.append(self.enabled)
         return cmd
 
     def modify_connection_ethernet(self):
@@ -564,37 +629,30 @@ class Nmcli(object):
         # To add an Ethernet connection with static IP configuration, issue a command as follows
         # - nmcli: name=add cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 state=present
         #        nmcli con add con-name my-eth1 ifname eth1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1
-        # if self.type == 'ethernet':
-        #     cmd.append = 'con'
-        #     cmd.append = self.name
-        #     cmd.append('con-name')
-        #     if self.cname is not None:
-        #         cmd.append(self.cname)
-        #     elif self.cname is None:
-        #         if self.ifname is not None:
-        #             cmd.append(self.ifname)
-        #     cmd.append('ifname')
-        #     cmd.append(self.ifname)
-        #     cmd.append('type')
-        #     cmd.append(self.type)
-        #     if self.ip4 is not None:
-        #         cmd.append('ip4')
-        #         cmd.append(self.ip4)
-        #     if self.gw4 is not None:
-        #         cmd.append('gw4')
-        #         cmd.append(self.gw4)
-        #     if self.dns4 is not None:
-        #         cmd.append('dns4')
-        #         cmd.append(self.dns4)
-        #     if self.ip6 is not None:
-        #         cmd.append('ip6')
-        #         cmd.append(self.ip6)
-        #     if self.gw6 is not None:
-        #         cmd.append('gw6')
-        #         cmd.append(self.gw4)
-        #     if self.dns6 is not None:
-        #         cmd.append('dns6')
-        #         cmd.append(self.dns6)
+        cmd.append('con')
+        cmd.append('mod')
+        cmd.append(self.cname)
+        if self.ip4 is not None:
+            cmd.append('ipv4.address')
+            cmd.append(self.ip4)
+        if self.gw4 is not None:
+            cmd.append('ipv4.gateway')
+            cmd.append(self.gw4)
+        if self.dns4 is not None:
+            cmd.append('ipv4.dns')
+            cmd.append(self.dns4)
+        if self.ip6 is not None:
+            cmd.append('ipv6.address')
+            cmd.append(self.ip6)
+        if self.gw6 is not None:
+            cmd.append('ipv6.gateway')
+            cmd.append(self.gw4)
+        if self.dns6 is not None:
+            cmd.append('ipv6.dns')
+            cmd.append(self.dns6)
+        if self.enabled is not None:
+            cmd.append('autoconnect')
+            cmd.append(self.enabled)
         return cmd
 
     def create_connection_bridge(self):
@@ -682,6 +740,13 @@ def main():
             ip6=dict(required=False, default=None, type='str'),
             gw6=dict(required=False, default=None, type='str'),
             dns6=dict(required=False, default=None, type='str'),
+            # Bond Specific vars
+            mode=dict(require=False, default="balance-rr", choices=["balance-rr", "active-backup", "balance-xor", "broadcast", "802.3ad", "balance-tlb", "balance-alb"], type='str'),
+            miimon=dict(required=False, default=None, type='str'),
+            downdelay=dict(required=False, default=None, type='str'),
+            updelay=dict(required=False, default=None, type='str'),
+            arp_interval=dict(required=False, default=None, type='str'),
+            arp_ip_target=dict(required=False, default=None, type='str'),
             # general usage
             mtu=dict(required=False, default=None, type='str'),
             mac=dict(required=False, default=None, type='str'),
