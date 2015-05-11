@@ -19,10 +19,10 @@ This file is a module for Ansible that interacts with Network Manager
 Table of Contents
 =================
 
+  * [Table of Contents](#table-of-contents)
   * [This documentation is a work in progress.](#this-documentation-is-a-work-in-progress)
   * [Why did I write an Ansible module for NetworkManager?](#why-did-i-write-an-ansible-module-for-networkmanager)
   * [DOCUMENTATION:](#documentation)
- * [](#module-nmcli)
       * [options:](#options)
         * [state:](#state)
         * [enabled:](#enabled)
@@ -39,12 +39,14 @@ Table of Contents
         * [gw6:](#gw6)
         * [dns6:](#dns6)
         * [mtu:](#mtu)
+ * [](#bond-specific)
         * [primary:](#primary)
         * [miimon:](#miimon)
         * [downdelay:](#downdelay)
         * [updelay:](#updelay)
         * [arp_interval:](#arp_interval)
         * [arp_ip_target:](#arp_ip_target)
+ * [](#bridge-specific)
         * [stp:](#stp)
         * [priority:](#priority)
         * [forwarddelay:](#forwarddelay)
@@ -55,6 +57,7 @@ Table of Contents
         * [slavepriority:](#slavepriority)
         * [path_cost:](#path_cost)
         * [hairpin:](#hairpin)
+ * [](#vlan-specific)
         * [vlanid:](#vlanid)
         * [vlandev:](#vlandev)
         * [flags:](#flags)
@@ -89,7 +92,7 @@ I will be trying to document as I code but there might be some instances where t
 
 # DOCUMENTATION:
 
-## module: *nmcli*
+**module:** *nmcli*
 **author:** Chris Long  
 **short_description:** Manage Networking  
 **requirements:** [ nmcli, dbus ]  
@@ -201,7 +204,8 @@ Manage the network devices. Create, modify, and manage, ethernet, teams, bonds, 
 - The connection MTU, e.g. 9000. This can't be applied when creating the interface and is done once the interface has been created. (NetworkManager default: 1500)
 - Can be used when modifying Team, VLAN, Ethernet (Future plans to implement wifi, pppoe, infiniband)  
 
-> ***Bond specific***  
+###***Bond specific***  
+___
 
 #### primary:
 **required:** False  
@@ -239,8 +243,8 @@ Manage the network devices. Create, modify, and manage, ethernet, teams, bonds, 
 **description:**
 - This is only used with bond - ARP IP target  
 
-> ***Bridge specific***  
-
+###***Bridge specific***  
+___
 #### stp:
 **required:** False  
 **default:** None  
@@ -301,8 +305,8 @@ Manage the network devices. Create, modify, and manage, ethernet, teams, bonds, 
 **description:**
 - This is only used with 'bridge-slave' - 'hairpin mode' for the slave, which allows frames to be sent back out through the slave the frame was received on. (NetworkManager default: yes)  
 
-> ***VLAN specific***  
-
+###***VLAN specific***  
+___
 #### vlanid:
 **required:** False  
 **default:** None  
@@ -344,7 +348,6 @@ The following examples are working examples that I have run in the field. I foll
 |          /playbook-add.yml
 |          /playbook-del.yml
 ```
-
 
 ## inventory examples
 ### groups_vars
