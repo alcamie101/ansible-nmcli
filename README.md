@@ -15,7 +15,7 @@ This file is a module for Ansible that interacts with Network Manager
 
  You should have received a copy of the GNU General Public License
  along with Ansible.    If not, see <http://www.gnu.org/licenses/>.
- 
+```
 Table of Contents
 =================
 
@@ -68,8 +68,6 @@ Table of Contents
     * [playbook-del.yml example](#playbook-delyml-example)
   * [Exit Status's:](#exit-statuss)
 
-
-```
 # This documentation is a work in progress. 
 I will be trying to document as I code but there might be some instances where the documentation is slightly out of sync. I apologise in advance for that but my attempts to stay synced are closely aligned with me getting the code to a working state. So fingers crossed, it should stay interpretable enough.
 
