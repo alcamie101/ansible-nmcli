@@ -1,71 +1,21 @@
 ---
-- hosts: controller-01.infra.openstack.eng.rdu2.redhat.com
+#- hosts: controller-01.infra.openstack.eng.rdu2.redhat.com
+#- hosts: localhost
+#- hosts: devops-os-controller
+#- hosts: devops-os-storage
+#- hosts: devops-os-compute
+- hosts: devops-openstack-prod
   remote_user: root
   tasks:
 
-#  - name: try nmcli add team - cname and ifname
-#    nmcli: name=add cname={{item.cname}} ifname={{item.ifname}} type=team enabled=yes state=present
+#  - name: install needed network manager libs
+#    yum: name={{ item }} state=installed
 #    with_items:
-#      - { cname: 'cname-test', ifname: 'ifname-test' }
-#      - { cname: 'cname-pest', ifname: 'ifname-pest' }
-
-#  - name: try nmcli add team - cname only
-#    nmcli: name=add type=team cname={{item.cname}} state=present
-#    with_items:
-#      - { cname: 'cname-test'}
-#      - { cname: 'cname-pest'}
-
-#  - name: try nmcli add team - ifname only
-#    nmcli: name=add type=team ifname=testingifname state=present
-
-#  - name: try nmcli add team - no cname or ifname
-#    nmcli: name=add type=team state=present
-
-#  - name: try nmcli add team - cname only & ip
-#    nmcli: name=add type=team cname={{item.cname}} ip4={{item.ip4}} state=present
-#    with_items:
-#      - { cname: 'cname-test', ip4: '192.168.100.1/24'}
-#      - { cname: 'cname-pest', ip4: '192.168.100.2/24'}
-
-#  - name: try nmcli add team - cname only & multiple IP's (doesn't work at this time)
-#    nmcli: name=add type=team cname={{item.cname}} ip4="{{item.ip4[0]}}" state=present
-#    with_items:
-#      - { cname: 'cname-test', ip4: ['192.168.100.1/24', '192.168.100.3']}
-#      - { cname: 'cname-pest', ip4: ['192.168.100.2/24', '192.168.100.4']}
-
-#  tasks:
-#  - name: try nmcli add team - cname only & ip
-#    nmcli: name=add type=team cname={{item.cname}} ip4={{item.ip4}} state=present
-#    with_items:
-#      - { cname: 'cname-test', ip4: '192.168.100.1/24'}
-#      - { cname: 'cname-pest', ip4: '192.168.100.2/24'}
-
-###### Working with mods 1
-#  - name: try nmcli add ethernet - cname only & multiple IP's (doesn't work at this time)
-#    nmcli: name=add type=ethernet cname={{item.cname}} ip4="{{item.ip4[0]}}" state=present
-#    with_items:
-#      - { cname: 'cname-test', ip4: ['192.168.100.1/24', '192.168.100.3']}
-#      - { cname: 'cname-pest', ip4: ['192.168.100.2/24', '192.168.100.4']}
-
-###### Working with all cloud nodes - Bonding
-#
-#  - name: try nmcli add bond - cname only & ip4 gw4 mode
-#    nmcli: type=bond cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} mode={{item.mode}} state=present
-#    with_items:
-#      - "{{nmcli_bond}}"
-#
-#  - name: try nmcli add bond-slave
-#    nmcli: type=bond-slave cname={{item.cname}} ifname={{item.ifname}} master={{item.master}} state=present
-#    with_items:
-#      - "{{nmcli_bond_slave}}"
-
-##### Working with all cloud nodes - Ethernet
-
-#  - name: nmcli add Ethernet - cname only & ip4 gw4
-#    nmcli: type=ethernet cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} state=present
-#    with_items:
-#      - "{{nmcli_ethernet}}"
-
+##      - libnm-qt-devel.x86_64
+#      - nm-connection-editor.x86_64
+#      - libsemanage-python
+#      - policycoreutils-python
+#      - rsync
 
 ##### Working with all cloud nodes - Teaming
 
@@ -84,3 +34,34 @@
     nmcli: type=team-slave cname={{item.cname}} ifname={{item.ifname}} master={{item.master}} state=present
     with_items:
       - "{{nmcli_team_slave}}"
+
+###### Working with all cloud nodes - Bonding
+#
+#  - name: try nmcli add bond - cname only & ip4 gw4 mode
+#    nmcli: type=bond cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} mode={{item.mode}} state=present
+#    with_items:
+#      - "{{nmcli_bond}}"
+#
+##  - name: try nmcli mod team - quoted dns array state=modify enabled=no
+##    nmcli: cname={{item.cname}} dns4={{item.dns4}} type=team
+##    with_items:
+##      - {cname: 'cname-test', dns4: '"8.8.8.8 8.8.4.4"'}
+##      - {cname: 'cname-pest', dns4: '"8.8.8.8 8.8.4.4"'}
+#
+#  - name: try nmcli add bond-slave
+#    nmcli: type=bond-slave cname={{item.cname}} ifname={{item.ifname}} master={{item.master}} state=present
+#    with_items:
+#      - "{{nmcli_bond_slave}}"
+
+##### Working with all cloud nodes - Ethernet
+
+#  - name: nmcli add Ethernet - cname only & ip4 gw4
+#    nmcli: type=ethernet cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} state=present
+#    with_items:
+#      - "{{nmcli_ethernet}}"
+
+#  - name: try nmcli mod Ethernet - quoted dns array state=modify enabled=no
+#    nmcli: cname={{item.cname}} dns4={{item.dns4}} type=team
+#    with_items:
+#      - {cname: 'cname-test', dns4: '"8.8.8.8 8.8.4.4"'}
+#      - {cname: 'cname-pest', dns4: '"8.8.8.8 8.8.4.4"'}

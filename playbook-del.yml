@@ -1,5 +1,9 @@
 ---
-- hosts: localhost
+#- hosts: controller-01.infra.openstack.eng.rdu2.redhat.com
+#- hosts: devops-os-controller
+#- hosts: devops-os-storage
+#- hosts: devops-os-compute
+- hosts: devops-openstack-prod
   remote_user: root
 
   tasks:
@@ -10,5 +14,18 @@
   - name: try nmcli del team - multiple
     nmcli: cname={{item.cname}} state=absent
     with_items:
-      - { cname: 'cname-test'}
-      - { cname: 'cname-pest'}
+      - { cname: 'em1'}
+      - { cname: 'em2'}
+      - { cname: 'p1p1'}
+      - { cname: 'p1p2'}
+      - { cname: 'p2p1'}
+      - { cname: 'p2p2'}
+      - { cname: 'tenant'}
+      - { cname: 'storage'}
+      - { cname: 'external'}
+      - { cname: 'team-em1'}
+      - { cname: 'team-em2'}
+      - { cname: 'team-p1p1'}
+      - { cname: 'team-p1p2'}
+      - { cname: 'team-p2p1'}
+      - { cname: 'team-p2p2'}
