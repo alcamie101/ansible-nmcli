@@ -445,7 +445,7 @@ tenant_ip: "192.168.200.21/23"
 
 ## playbook-del.yml example
 
-```
+```yml
 ---
 - hosts: openstack-stage
   remote_user: root

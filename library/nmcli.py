@@ -219,29 +219,155 @@ options:
 '''
 
 EXAMPLES='''
+The following examples are working examples that I have run in the field. I followed follow the structure:
+```
+|_/inventory/cloud-hosts
+|           /group_vars/openstack-stage.yml
+|           /host_vars/controller-01.openstack.host.com
+|           /host_vars/controller-02.openstack.host.com
+|_/playbook/library/nmcli.py
+|          /playbook-add.yml
+|          /playbook-del.yml
+```
+
+## inventory examples
+### groups_vars
+```yml
+---
+#devops_os_define_network
+storage_gw: "192.168.0.254"
+external_gw: "10.10.0.254"
+tenant_gw: "172.100.0.254"
+
+#Team vars
+nmcli_team:
+    - {cname: 'tenant', ip4: "{{tenant_ip}}", gw4: "{{tenant_gw}}"}
+    - {cname: 'external', ip4: "{{external_ip}}", gw4: "{{external_gw}}"}
+    - {cname: 'storage', ip4: "{{storage_ip}}", gw4: "{{storage_gw}}"}
+nmcli_team_slave:
+    - {cname: 'em1', ifname: 'em1', master: 'tenant'}
+    - {cname: 'em2', ifname: 'em2', master: 'tenant'}
+    - {cname: 'p2p1', ifname: 'p2p1', master: 'storage'}
+    - {cname: 'p2p2', ifname: 'p2p2', master: 'external'}
+
+#bond vars
+nmcli_bond:
+    - {cname: 'tenant', ip4: "{{tenant_ip}}", gw4: '', mode: 'balance-rr'}
+    - {cname: 'external', ip4: "{{external_ip}}", gw4: '', mode: 'balance-rr'}
+    - {cname: 'storage', ip4: "{{storage_ip}}", gw4: "{{storage_gw}}", mode: 'balance-rr'}
+nmcli_bond_slave:
+    - {cname: 'em1', ifname: 'em1', master: 'tenant'}
+    - {cname: 'em2', ifname: 'em2', master: 'tenant'}
+    - {cname: 'p2p1', ifname: 'p2p1', master: 'storage'}
+    - {cname: 'p2p2', ifname: 'p2p2', master: 'external'}
+
+#ethernet vars
+nmcli_ethernet:
+    - {cname: 'em1', ifname: 'em1', ip4: "{{tenant_ip}}", gw4: "{{tenant_gw}}"}
+    - {cname: 'em2', ifname: 'em2', ip4: "{{tenant_ip1}}", gw4: "{{tenant_gw}}"}
+    - {cname: 'p2p1', ifname: 'p2p1', ip4: "{{storage_ip}}", gw4: "{{storage_gw}}"}
+    - {cname: 'p2p2', ifname: 'p2p2', ip4: "{{external_ip}}", gw4: "{{external_gw}}"}
+```
+
+### host_vars
+```yml
+---
+storage_ip: "192.168.160.21/23"
+external_ip: "10.10.152.21/21"
+tenant_ip: "192.168.200.21/23"
+```
+
+
+
+## playbook-add.yml example
+
+```yml
+---
+- hosts: openstack-stage
+  remote_user: root
+  tasks:
+
+- name: install needed network manager libs
+  yum: name={{ item }} state=installed
+  with_items:
+    - libnm-qt-devel.x86_64
+    - nm-connection-editor.x86_64
+    - libsemanage-python
+    - policycoreutils-python
+
+##### Working with all cloud nodes - Teaming
+  - name: try nmcli add team - cname only & ip4 gw4
+    nmcli: type=team cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} state=present
+    with_items:
+      - "{{nmcli_team}}"
+
+  - name: try nmcli add teams-slave
+    nmcli: type=team-slave cname={{item.cname}} ifname={{item.ifname}} master={{item.master}} state=present
+    with_items:
+      - "{{nmcli_team_slave}}"
+
+###### Working with all cloud nodes - Bonding
+#  - name: try nmcli add bond - cname only & ip4 gw4 mode
+#    nmcli: type=bond cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} mode={{item.mode}} state=present
+#    with_items:
+#      - "{{nmcli_bond}}"
+#
+#  - name: try nmcli add bond-slave
+#    nmcli: type=bond-slave cname={{item.cname}} ifname={{item.ifname}} master={{item.master}} state=present
+#    with_items:
+#      - "{{nmcli_bond_slave}}"
+
+##### Working with all cloud nodes - Ethernet
+#  - name: nmcli add Ethernet - cname only & ip4 gw4
+#    nmcli: type=ethernet cname={{item.cname}} ip4={{item.ip4}} gw4={{item.gw4}} state=present
+#    with_items:
+#      - "{{nmcli_ethernet}}"
+```
+
+## playbook-del.yml example
+
+```yml
+---
+- hosts: openstack-stage
+  remote_user: root
+  tasks:
+
+  - name: try nmcli del team - multiple
+    nmcli: cname={{item.cname}} state=absent
+    with_items:
+      - { cname: 'em1'}
+      - { cname: 'em2'}
+      - { cname: 'p1p1'}
+      - { cname: 'p1p2'}
+      - { cname: 'p2p1'}
+      - { cname: 'p2p2'}
+      - { cname: 'tenant'}
+      - { cname: 'storage'}
+      - { cname: 'external'}
+      - { cname: 'team-em1'}
+      - { cname: 'team-em2'}
+      - { cname: 'team-p1p1'}
+      - { cname: 'team-p1p2'}
+      - { cname: 'team-p2p1'}
+      - { cname: 'team-p2p2'}
+```
 # To add an Ethernet connection with static IP configuration, issue a command as follows
-- nmcli: name=add cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 state=present
+- nmcli: cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 state=present
 
 # To add an Team connection with static IP configuration, issue a command as follows
-- nmcli: name=add cname=my-team1 ifname=my-team1 type=team ip4=192.168.100.100/24 gw4=192.168.100.1 state=present enabled=yes
+- nmcli: cname=my-team1 ifname=my-team1 type=team ip4=192.168.100.100/24 gw4=192.168.100.1 state=present enabled=yes
 
 # Optionally, at the same time specify IPv6 addresses for the device as follows:
-- nmcli: name=add cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 ip6=abbe::cafe gw6=2001:db8::1 state=present
+- nmcli: cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 ip6=abbe::cafe gw6=2001:db8::1 state=present
 
 # To add two IPv4 DNS server addresses:
--nmcli: name=mod cname=my-eth1 dns4=["8.8.8.8", "8.8.4.4"]
-
-# To bring up the new connection, issue a command as follows
-- nmcli: name=up cname=my-eth1 ifname=eth1 enabled=yes state=present
-
-# To lock a profile to a specific interface, issue a command as follows
-- nmcli: name=add ctype=ethernet name=my-eth1 ifname=eth1 state=present
+-nmcli: cname=my-eth1 dns4=["8.8.8.8", "8.8.4.4"] state=present
 
 # To make a profile usable for all compatible Ethernet interfaces, issue a command as follows
-- nmcli: name=add ctype=ethernet name=my-eth1 ifname="*" state=present
+- nmcli: ctype=ethernet name=my-eth1 ifname="*" state=present
 
 # To change the property of a setting e.g. MTU, issue a command as follows:
-- nmcli: name=modify cname=my-eth1 mtu=9000
+- nmcli: cname=my-eth1 mtu=9000 state=present
 
     Exit Status's:
         - nmcli exits with status 0 if it succeeds, a value greater than 0 is
@@ -520,12 +646,10 @@ class Nmcli(object):
         if self.dns6 is not None:
             cmd.append('ipv6.dns')
             cmd.append(self.dns6)
-        if self.mtu is not True:
-            cmd.append('mtu')
-            cmd.append(self.mtu)
         if self.enabled is not None:
             cmd.append('autoconnect')
             cmd.append(self.enabled)
+            # Can't use MTU with team
         return cmd
 
     def create_connection_team_slave(self):
@@ -548,6 +672,9 @@ class Nmcli(object):
         cmd.append('master')
         if self.cname is not None:
             cmd.append(self.master)
+        # if self.mtu is not None:
+        #     cmd.append('802-3-ethernet.mtu')
+        #     cmd.append(self.mtu)
         return cmd
 
     def modify_connection_team_slave(self):
@@ -558,6 +685,9 @@ class Nmcli(object):
         cmd.append(self.cname)
         cmd.append('connection.master')
         cmd.append(self.master)
+        if self.mtu is not None:
+            cmd.append('802-3-ethernet.mtu')
+            cmd.append(self.mtu)
         return cmd
 
     def create_connection_bond(self):
@@ -737,6 +867,9 @@ class Nmcli(object):
         if self.dns6 is not None:
             cmd.append('ipv6.dns')
             cmd.append(self.dns6)
+        if self.mtu is not None:
+            cmd.append('802-3-ethernet.mtu')
+            cmd.append(self.mtu)
         if self.enabled is not None:
             cmd.append('autoconnect')
             cmd.append(self.enabled)
@@ -765,15 +898,52 @@ class Nmcli(object):
     def create_connection(self):
         cmd=[]
         if self.type=='team':
-            cmd=self.create_connection_team()
+            # cmd=self.create_connection_team()
+            if (self.dns4 is not None) or (self.dns6 is not None):
+                cmd=self.create_connection_team()
+                self.execute_command(cmd)
+                cmd=self.modify_connection_team()
+                self.execute_command(cmd)
+                cmd=self.up_connection()
+                return self.execute_command(cmd)
+            elif (self.dns4 is None) or (self.dns6 is None):
+                cmd=self.create_connection_team()
+                return self.execute_command(cmd)
         elif self.type=='team-slave':
-            cmd=self.create_connection_team_slave()
+            if self.mtu is not None:
+                cmd=self.create_connection_team_slave()
+                self.execute_command(cmd)
+                cmd=self.modify_connection_team_slave()
+                self.execute_command(cmd)
+                # cmd=self.up_connection()
+                return self.execute_command(cmd)
+            else:
+                cmd=self.create_connection_team_slave()
+                return self.execute_command(cmd)
         elif self.type=='bond':
-            cmd=self.create_connection_bond()
+            if (self.mtu is not None) or (self.dns4 is not None) or (self.dns6 is not None):
+                cmd=self.create_connection_bond()
+                self.execute_command(cmd)
+                cmd=self.modify_connection_bond()
+                self.execute_command(cmd)
+                cmd=self.up_connection()
+                return self.execute_command(cmd)
+            else:
+                cmd=self.create_connection_bond()
+                return self.execute_command(cmd)
         elif self.type=='bond-slave':
             cmd=self.create_connection_bond_slave()
         elif self.type=='ethernet':
-            cmd=self.create_connection_ethernet()
+            if (self.mtu is not None) or (self.dns4 is not None) or (self.dns6 is not None):
+                cmd=self.create_connection_ethernet()
+                self.execute_command(cmd)
+                cmd=self.modify_connection_ethernet()
+                self.execute_command(cmd)
+                cmd=self.up_connection()
+                return self.execute_command(cmd)
+            else:
+                cmd=self.create_connection_ethernet()
+                return self.execute_command(cmd)
         elif self.type=='bridge':
             cmd=self.create_connection_bridge()
         elif self.type=='vlan':
@@ -782,7 +952,6 @@ class Nmcli(object):
 
     def remove_connection(self):
         # self.down_connection()
-
         cmd=[self.module.get_bin_path('nmcli', True)]
         cmd.append('con')
         cmd.append('del')
@@ -795,7 +964,6 @@ class Nmcli(object):
             cmd=self.modify_connection_team()
         elif self.type=='team-slave':
             cmd=self.modify_connection_team_slave()
-            cmd.append(self.up_connection())
         elif self.type=='bond':
             cmd=self.modify_connection_bond()
         elif self.type=='bond-slave':
@@ -893,22 +1061,14 @@ def main():
             # modify connection (note: this function is check mode aware)
             # result['Connection']=('Connection %s of Type %s is not being added' % (nmcli.cname, nmcli.type))
             result['Exists']='Connections do exist so we are modifying them'
+            if module.check_mode:
+                module.exit_json(changed=True)
             (rc, out, err)=nmcli.modify_connection()
-            result['cname']=nmcli.cname
-            result['ipv4']=nmcli.ip4
-            result['type']=nmcli.type
         if not nmcli.connection_exists():
             result['Connection']=('Connection %s of Type %s is being added' % (nmcli.cname, nmcli.type))
-            result['Exists']='Connection does not already exist'
             if module.check_mode:
                 module.exit_json(changed=True)
             (rc, out, err)=nmcli.create_connection()
-            # result['enabled']=nmcli.enabled
-            # result['cname']=nmcli.cname
-            # result['ifname']=nmcli.ifname
-            # result['autoconnect']=nmcli.enabled
-            # result['type']=nmcli.type
-            # result['ip4']=nmcli.ip4
         if rc is not None and rc!=0:
             module.fail_json(name=nmcli.cname, msg=err, rc=rc)
 
